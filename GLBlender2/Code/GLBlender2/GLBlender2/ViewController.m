@@ -52,42 +52,28 @@
     glEnableVertexAttribArray(GLKVertexAttribPosition);
     glVertexAttribPointer(GLKVertexAttribPosition, 3, GL_FLOAT, GL_FALSE, 0, cubePositions);
     
-    //    // Texels
-    //    glEnableVertexAttribArray(GLKVertexAttribTexCoord0);
-    //    glVertexAttribPointer(GLKVertexAttribTexCoord0, 2, GL_FLOAT, GL_FALSE, 0, cubeTexels);
-    
     // Normals
     glEnableVertexAttribArray(GLKVertexAttribNormal);
     glVertexAttribPointer(GLKVertexAttribNormal, 3, GL_FLOAT, GL_FALSE, 0, cubeNormals);
     
-    // Set material
-//    self.effect.material.diffuseColor = GLKVector4Make(0.8f, 0.0f, 0.0f, 1.0f);
-//    self.effect.material.specularColor = GLKVector4Make(0.0f, 0.0f, 0.2f, 1.0f);
-    
-    // Prepare effect
-    [self.effect prepareToDraw];
-    
-    // Draw Model
-    glDrawArrays(GL_TRIANGLES, 0, cubeVertices);
+    // Render by parts
+    for(int i=0; i<cubeMaterials; i++)
+    {
+        // Set material
+        self.effect.material.diffuseColor = GLKVector4Make(cubeDiffuses[i][0], cubeDiffuses[i][1], cubeDiffuses[i][2], 1.0f);
+        self.effect.material.specularColor = GLKVector4Make(cubeSpeculars[i][0], cubeSpeculars[i][1], cubeSpeculars[i][2], 1.0f);
+        
+        // Prepare effect
+        [self.effect prepareToDraw];
+        
+        // Draw vertices
+        glDrawArrays(GL_TRIANGLES, cubeFirsts[i], cubeCounts[i]);
+    }
 }
 
 - (void)createEffect {
     // Initialize
     self.effect = [[GLKBaseEffect alloc] init];
-    
-    //    // Texture
-    //    NSDictionary* options = @{ GLKTextureLoaderOriginBottomLeft: @YES };
-    //    NSError* error;
-    //    NSString* path = [[NSBundle mainBundle] pathForResource:@"cube.png" ofType:nil];
-    //    GLKTextureInfo* texture = [GLKTextureLoader textureWithContentsOfFile:path options:options error:&error];
-    //
-    //    if(texture == nil) {
-    //        NSLog(@"Error loading file: %@", [error localizedDescription]);
-    //        return;
-    //    }
-    //
-    //    self.effect.texture2d0.name = texture.name;
-    //    self.effect.texture2d0.enabled = true;
     
     // Light
     self.effect.light0.enabled = GL_TRUE;
@@ -114,7 +100,7 @@
 }
 
 - (void)update {
-//    _rotate += 1.0f;
+    _rotate += 1.0f;
 }
 
 
