@@ -18,8 +18,8 @@ varying vec3 vNormal;
 varying vec2 vTexel;
  
 void main(void) {
-//    vNormal = uNormalMatrix * aNormal;
-    vTexel = aTexel;
+    vNormal = uNormalMatrix * aNormal;
+//    vTexel = aTexel;
     gl_Position = uProjectionMatrix * uModelViewMatrix * vec4(aPosition, 1.0);
 }
 

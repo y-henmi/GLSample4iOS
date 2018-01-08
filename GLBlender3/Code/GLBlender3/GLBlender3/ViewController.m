@@ -7,13 +7,15 @@
 //
 
 #import "ViewController.h"
+#import "PhongShader.h"
+#import "starship.h"
 #import "cube.h"
 
 @interface ViewController () {
     float _rotate;
 }
 
-@property (strong, nonatomic) GLKBaseEffect* effect;
+@property (strong, nonatomic) PhongShader* phongShader;
 
 @end
 
@@ -38,8 +40,13 @@
     glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
     glEnable(GL_CULL_FACE);
     
-    // Create effect
-    [self createEffect];
+    // Load shader
+    [self loadShader];
+}
+
+- (void)loadShader {
+    self.phongShader = [[PhongShader alloc] init];
+    glUseProgram(self.phongShader.program);
 }
 
 - (void)glkView:(GLKView *)view drawInRect:(CGRect)rect {
@@ -49,38 +56,22 @@
     [self setMatrices];
     
     // Positions
-    glEnableVertexAttribArray(GLKVertexAttribPosition);
-    glVertexAttribPointer(GLKVertexAttribPosition, 3, GL_FLOAT, GL_FALSE, 0, cubePositions);
+    glEnableVertexAttribArray(self.phongShader.aPosition);
+    glVertexAttribPointer(self.phongShader.aPosition, 3, GL_FLOAT, GL_FALSE, 0, starshipPositions);
     
     // Normals
-    glEnableVertexAttribArray(GLKVertexAttribNormal);
-    glVertexAttribPointer(GLKVertexAttribNormal, 3, GL_FLOAT, GL_FALSE, 0, cubeNormals);
+    glEnableVertexAttribArray(self.phongShader.aNormal);
+    glVertexAttribPointer(self.phongShader.aNormal, 3, GL_FLOAT, GL_FALSE, 0, starshipNormals);
     
     // Render by parts
-    for(int i=0; i<cubeMaterials; i++)
-    {
+    for(int i = 0; i < cubeMaterials; i++) {
         // Set material
-        self.effect.material.diffuseColor = GLKVector4Make(cubeDiffuses[i][0], cubeDiffuses[i][1], cubeDiffuses[i][2], 1.0f);
-        self.effect.material.specularColor = GLKVector4Make(cubeSpeculars[i][0], cubeSpeculars[i][1], cubeSpeculars[i][2], 1.0f);
-        
-        // Prepare effect
-        [self.effect prepareToDraw];
+        glUniform3f(self.phongShader.uDiffuse, starshipDiffuses[i][0], starshipDiffuses[i][1], starshipDiffuses[i][2]);
+        glUniform3f(self.phongShader.uSpecular, starshipSpeculars[i][0], starshipSpeculars[i][1], starshipSpeculars[i][2]);
         
         // Draw vertices
         glDrawArrays(GL_TRIANGLES, cubeFirsts[i], cubeCounts[i]);
     }
-}
-
-- (void)createEffect {
-    // Initialize
-    self.effect = [[GLKBaseEffect alloc] init];
-    
-    // Light
-    self.effect.light0.enabled = GL_TRUE;
-    self.effect.light0.position = GLKVector4Make(1.0f, 1.0f, 1.0f, 1.0f);
-    self.effect.light0.specularColor = GLKVector4Make(0.25f, 0.25f, 0.25f, 1.0f);
-    self.effect.light0.diffuseColor = GLKVector4Make(0.75f, 0.75f, 0.75f, 1.0f);
-    self.effect.lightingType = GLKLightingTypePerPixel;
 }
 
 - (void)setMatrices {
@@ -88,15 +79,15 @@
     const GLfloat aspectRatio = (GLfloat)(self.view.bounds.size.width) / (GLfloat)(self.view.bounds.size.height);
     const GLfloat fieldView = GLKMathDegreesToRadians(90.0f);
     const GLKMatrix4 projectionMatrix = GLKMatrix4MakePerspective(fieldView, aspectRatio, 0.1f, 10.0f);
-    self.effect.transform.projectionMatrix = projectionMatrix;
+    glUniformMatrix4fv(self.phongShader.uProjectionMatrix, 1, 0, projectionMatrix.m);
     
     // ModelView Matrix
     GLKMatrix4 modelViewMatrix = GLKMatrix4Identity;
-    modelViewMatrix = GLKMatrix4Translate(modelViewMatrix, 0.0f, 0.0f, -5.0f);
+    modelViewMatrix = GLKMatrix4Translate(modelViewMatrix, 0.0f, 0.0f, -2.5f);
     modelViewMatrix = GLKMatrix4RotateX(modelViewMatrix, GLKMathDegreesToRadians(45.0f));
     modelViewMatrix = GLKMatrix4RotateY(modelViewMatrix, GLKMathDegreesToRadians(_rotate));
     modelViewMatrix = GLKMatrix4RotateZ(modelViewMatrix, GLKMathDegreesToRadians(_rotate));
-    self.effect.transform.modelviewMatrix = modelViewMatrix;
+    glUniformMatrix4fv(self.phongShader.uModelViewMatrix, 1, 0, modelViewMatrix.m);
 }
 
 - (void)update {
