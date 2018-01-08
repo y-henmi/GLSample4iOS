@@ -7,15 +7,13 @@
 //
 
 #import "ViewController.h"
-#import "PhongShader.h"
-#import "starship.h"
 #import "cube.h"
 
 @interface ViewController () {
     float _rotate;
 }
 
-@property (strong, nonatomic) PhongShader* phongShader;
+@property (strong, nonatomic) GLKBaseEffect* effect;
 
 @end
 
@@ -39,59 +37,43 @@
     // OpenGL ES Settings
     glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
     glEnable(GL_CULL_FACE);
-    glEnable(GL_DEPTH_TEST);
     
-    // Load shader
-    [self loadShader];
-}
-
-- (void)loadShader {
-    self.phongShader = [[PhongShader alloc] init];
-    glUseProgram(self.phongShader.program);
+    // Create effect
+    [self createEffect];
 }
 
 - (void)glkView:(GLKView *)view drawInRect:(CGRect)rect {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT);
     
     // Set matrices
     [self setMatrices];
     
     // Positions
-    glEnableVertexAttribArray(self.phongShader.aPosition);
-    glVertexAttribPointer(self.phongShader.aPosition, 3, GL_FLOAT, GL_FALSE, 0, starshipPositions);
+    glEnableVertexAttribArray(GLKVertexAttribPosition);
+    glVertexAttribPointer(GLKVertexAttribPosition, 3, GL_FLOAT, GL_FALSE, 0, cubePositions);
     
     // Normals
-    glEnableVertexAttribArray(self.phongShader.aNormal);
-    glVertexAttribPointer(self.phongShader.aNormal, 3, GL_FLOAT, GL_FALSE, 0, starshipNormals);
+    glEnableVertexAttribArray(GLKVertexAttribNormal);
+    glVertexAttribPointer(GLKVertexAttribNormal, 3, GL_FLOAT, GL_FALSE, 0, cubeNormals);
     
-    // Set material
-    glUniform3f(self.phongShader.uDiffuse, starshipDiffuses[i][0], starshipDiffuses[i][1], starshipDiffuses[i][2]);
-    glUniform3f(self.phongShader.uSpecular, starshipSpeculars[i][0], starshipSpeculars[i][1], starshipSpeculars[i][2]);
-    
-    // Prepare effect
-    [self.effect prepareToDraw];
-    
-    // Draw Model
-    glDrawArrays(GL_TRIANGLES, 0, starshipVertices);
+    // Render by parts
+    for(int i=0; i<cubeMaterials; i++)
+    {
+        // Set material
+        self.effect.material.diffuseColor = GLKVector4Make(cubeDiffuses[i][0], cubeDiffuses[i][1], cubeDiffuses[i][2], 1.0f);
+        self.effect.material.specularColor = GLKVector4Make(cubeSpeculars[i][0], cubeSpeculars[i][1], cubeSpeculars[i][2], 1.0f);
+        
+        // Prepare effect
+        [self.effect prepareToDraw];
+        
+        // Draw vertices
+        glDrawArrays(GL_TRIANGLES, cubeFirsts[i], cubeCounts[i]);
+    }
 }
 
 - (void)createEffect {
     // Initialize
     self.effect = [[GLKBaseEffect alloc] init];
-    
-//    // Texture
-//    NSDictionary* options = @{ GLKTextureLoaderOriginBottomLeft: @YES };
-//    NSError* error;
-//    NSString* path = [[NSBundle mainBundle] pathForResource:@"cube.png" ofType:nil];
-//    GLKTextureInfo* texture = [GLKTextureLoader textureWithContentsOfFile:path options:options error:&error];
-//
-//    if(texture == nil) {
-//        NSLog(@"Error loading file: %@", [error localizedDescription]);
-//        return;
-//    }
-//
-//    self.effect.texture2d0.name = texture.name;
-//    self.effect.texture2d0.enabled = true;
     
     // Light
     self.effect.light0.enabled = GL_TRUE;
@@ -106,15 +88,15 @@
     const GLfloat aspectRatio = (GLfloat)(self.view.bounds.size.width) / (GLfloat)(self.view.bounds.size.height);
     const GLfloat fieldView = GLKMathDegreesToRadians(90.0f);
     const GLKMatrix4 projectionMatrix = GLKMatrix4MakePerspective(fieldView, aspectRatio, 0.1f, 10.0f);
-    glUniformMatrix4fv(self.phongShader.uProjectionMatrix, 1, 0, projectionMatrix.m);
+    self.effect.transform.projectionMatrix = projectionMatrix;
     
     // ModelView Matrix
     GLKMatrix4 modelViewMatrix = GLKMatrix4Identity;
-    modelViewMatrix = GLKMatrix4Translate(modelViewMatrix, 0.0f, 0.0f, -2.5f);
+    modelViewMatrix = GLKMatrix4Translate(modelViewMatrix, 0.0f, 0.0f, -5.0f);
     modelViewMatrix = GLKMatrix4RotateX(modelViewMatrix, GLKMathDegreesToRadians(45.0f));
     modelViewMatrix = GLKMatrix4RotateY(modelViewMatrix, GLKMathDegreesToRadians(_rotate));
     modelViewMatrix = GLKMatrix4RotateZ(modelViewMatrix, GLKMathDegreesToRadians(_rotate));
-    glUniformMatrix4fv(self.phongShader.uModelViewMatrix, 1, 0, modelViewMatrix.m);
+    self.effect.transform.modelviewMatrix = modelViewMatrix;
 }
 
 - (void)update {
@@ -127,5 +109,5 @@
     // Dispose of any resources that can be recreated.
 }
 
-
 @end
+
